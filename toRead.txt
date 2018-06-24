@@ -1,0 +1,33 @@
+Installation d'une nouvelle API :
+
+- Extraire l'archive "api-platform-2.0.3.zip"
+- Se placer dedans en cmd
+- composer install
+- php bin/console server:run
+- /app/config/parameters.yml // Réglages database
+- git init
+- Créer les entities :
+    -  php bin/console doctrine:generate:entity
+- Si le database est pas crée :
+    - php bin/console doctrine:database:create
+- Initialiser le schema de la db :
+    - php bin/console doctrine:schema:create
+- Quand on change le schema des entities
+    - php bin/console doctrine:schema:update --force 
+- Lancer le serveur :
+    - php bin/console server:run
+PS : Supprimer les dirs /var/cache et /var/logs pour forcer la suppression du cache
+
+-------
+
+Publier une entité sur l'API :
+    use ApiPlatform\Core\Annotation\ApiResource;
+    @ApiResource
+Pour checker la validité du schema:
+    php bin/console doctrine:schema:validate
+Toutes les annotations doctrine :
+    https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/annotations-reference.html
+Tous les types doctrine :
+    https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/basic-mapping.html#reference-mapping-types
+Différents associations mapping :
+    https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/association-mapping.html
