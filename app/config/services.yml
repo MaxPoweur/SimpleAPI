@@ -7,3 +7,23 @@ services:
 #    service_name:
 #        class: AppBundle\Directory\ClassName
 #        arguments: ["@another_service_name", "plain_value", "%parameter_name%"]
+    users.search_filter:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments: [ { firstname: 'exact', lastname: 'exact' } ]
+        tags:  [ { name: 'api_platform.filter', id: 'users.search' } ]
+    generic.search_filter:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        arguments: [ ~ ]
+        tags:  [ { name: 'api_platform.filter', id: 'generic.search' } ]
+    generic.numeric_filter:
+        parent: 'api_platform.doctrine.orm.range_filter'
+        arguments: [ ~ ]
+        tags:  [ { name: 'api_platform.filter', id: 'generic.range' } ]
+    generic.order_filter:
+        parent: 'api_platform.doctrine.orm.order_filter'
+        arguments: [ ~ ]
+        tags:  [ { name: 'api_platform.filter', id: 'generic.order' } ]
+    generic.date_filter:
+        parent: 'api_platform.doctrine.orm.date_filter'
+        arguments: [ ~ ]
+        tags:  [ { name: 'api_platform.filter', id: 'generic.date' } ]

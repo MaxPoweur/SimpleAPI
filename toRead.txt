@@ -17,7 +17,12 @@ Installation d'une nouvelle API :
 - Lancer le serveur :
     - php bin/console server:run
 PS : Supprimer les dirs /var/cache et /var/logs pour forcer la suppression du cache
-
+- Ajouter un service de filtre :
+    - L'ajouter dans /app/config/services.yml
+    - use ApiPlatform\Core\Annotation\ApiFilter;
+    - use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\TypeFilter; // Dans l'entity correspondante
+    // Liste des filtres : https://api-platform.com/docs/core/filters/
+    - Rajouter l'attribut "filters" correspondant sur l'entité filtrée
 -------
 
 Publier une entité sur l'API :
@@ -31,3 +36,11 @@ Tous les types doctrine :
     https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/basic-mapping.html#reference-mapping-types
 Différents associations mapping :
     https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/association-mapping.html
+Toutes les contraintes :
+    https://symfony.com/doc/current/reference/constraints.html
+
+
+--------
+
+validators (types, cb ...)
+grps de (de)serialization

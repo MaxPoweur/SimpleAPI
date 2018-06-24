@@ -2,26 +2,27 @@
 
 namespace AppBundle\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Core\Annotation\ApiResource;
-/*
-User:
-    firstname
-    lastname
-    alerts
-Alert:
-    From
-    To
-    min_hour_travel
-    max_hour_travel
-    jours:[]
-    min_hour_alert
-*/
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * User
  *
- * @ApiResource
+ * @ApiResource(
+ *      attributes={
+ *          "filters"={"generic.search", "generic.range", "generic.order", "generic.date"},
+ *          "normalization_context"={"groups"={"alertRead"}},
+ *          "denormalization_context"={"groups"={"alertWrite"}}
+ *       },
+ *      itemOperations={
+ *          "put"={"method"="PUT", "denormalization_context"={"groups"={"putAlert"}}},
+ *          "delete"={"method"="DELETE"},
+ *          "get"={"method"="GET"},
+ *      }
+ *  )
  * @ORM\Table(name="alerts")
  * @ORM\Entity(repositoryClass="AppBundle\Repository\AlertsRepository")
  */
@@ -33,58 +34,197 @@ class Alert
      * @ORM\Column(name="id", type="integer")
      * @ORM\Id
      * @ORM\GeneratedValue(strategy="AUTO")
+     * @Groups({"alertRead"})
      */
     private $id;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="from", type="string", length=10)
+     * @ORM\Column(name="departure", type="string", length=10)
+     * @Groups({"alertRead", "alertWrite", "putAlert"})
+     * @Assert\Length(
+     *      min = 2,
+     *      max = 10,
+     *      minMessage = "The departure must be at least {{ limit }} characters long",
+     *      maxMessage = "The departure cannot be longer than {{ limit }} characters"
+     * )
+     * @Assert\Regex(
+     *      pattern="/[^a-zA-Z]/",
+     *      match=false,
+     *      message="The departure must only contains letters"
+     * )
      */
-   private $from;
-
-   /**
-    * @var string
-    *
-    * @ORM\Column(name="to", type="string", length=10)
-    */
-   private $to;
-
-   /**
-    * @var string
-    *
-    * @ORM\Column(name="min_hour_departure", type="string", length=5)
-    */
-    private $min_hour_departure;
+    private $departure;
 
     /**
      * @var string
      *
-     * @ORM\Column(name="max_hour_departure", type="string", length=5)
+     * @ORM\Column(name="arrival", type="string", length=10)
+     * @Groups({"alertRead", "alertWrite", "putAlert"})
+     * @Assert\Length(
+     *      min = 2,
+     *      max = 10,
+     *      minMessage = "The arrival must be at least {{ limit }} characters long",
+     *      maxMessage = "The arrival cannot be longer than {{ limit }} characters"
+     * )
+     * @Assert\Regex(
+     *      pattern="/[^a-zA-Z]/",
+     *      match=false,
+     *      message="The arrival must only contains letters"
+     * )
      */
-     private $max_hour_departure;
+    private $arrival;
 
-     /**
-      * @var string
-      *
-      * @ORM\Column(name="min_hour_notification", type="string", length=5)
-      */
-      private $min_hour_notification;
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="minHourDeparture", type="string", length=5)
+     * @Groups({"alertRead", "alertWrite", "putAlert"})
+     * @Assert\Length(
+     *      min = 5,
+     *      max = 5,
+     *      minMessage = "The minh must be at least {{ limit }} characters long",
+     *      maxMessage = "The minh name cannot be longer than {{ limit }} characters"
+     * )
+     */
+    private $minHourDeparture;
 
-      /**
-       *
-       * @ORM\Column(name="days", type="json_array")
-       */
-       private $days;
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="maxHourDeparture", type="string", length=5)
+     * @Groups({"alertRead", "alertWrite", "putAlert"})
+     */
+    private $maxHourDeparture;
+
+    /**
+     * @var string
+     *
+     * @ORM\Column(name="minHourNotification", type="string", length=5)
+     * @Groups({"alertRead", "alertWrite", "putAlert"})
+     */
+    private $minHourNotification;
+
+    /**
+     *
+     * @ORM\Column(name="days", type="json_array")
+     * @Groups({"alertRead", "alertWrite", "putAlert"})
+     * @Assert\Count(
+     *      min = 1,
+     *      max = 7,
+     *      minMessage = "You must specify at least one day",
+     *      maxMessage = "You cannot specify more than {{ limit }} emails"
+     * )
+     */
+    private $days;
+
+    /**
+     * @Assert\Callback
+     */
+    public function validateDays(ExecutionContextInterface $context, $payload)
+    {
+        // somehow you have an array of "fake names"
+        $days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+        foreach ($this->getDays() as $day) {
+            if (count(preg_grep("/" . $day . "/i", $days)) == 0) {
+                $context->buildViolation('Please provide a valid day')
+                    ->atPath('days')
+                    ->addViolation();
+            }
+        }
+    }
+
+    /**
+     * @Assert\Callback
+     */
+    public function validateHours(ExecutionContextInterface $context, $payload)
+    {
+        $minHourDepartureCorrect = true;
+        $maxHourDepartureCorrect = true;
+        $minHourNotificationCorrect = true;
+        if (!self::validateHour($this->getMinHourDeparture())) {
+            $context->buildViolation('Please provide a correct time (HH:MM)')
+                ->atPath('minHourDeparture')
+                ->addViolation();
+            $minHourDepartureCorrect = false;
+        }
+        if (!self::validateHour($this->getMaxHourDeparture())) {
+            $context->buildViolation('Please provide a correct time (HH:MM)')
+                ->atPath('maxHourDeparture')
+                ->addViolation();
+            $maxHourDepartureCorrect = false;
+        }
+        if (!self::validateHour($this->getMinHourNotification())) {
+            $context->buildViolation('Please provide a correct time (HH:MM)')
+                ->atPath('minHourNotification')
+                ->addViolation();
+            $minHourNotificationCorrect = false;
+        }
+
+        if($minHourDepartureCorrect && $maxHourDepartureCorrect && self::compareTimes($this->getMinHourDeparture(), $this->getMaxHourDeparture()) != -1)
+            $context->buildViolation('The minimum hour of departure should be before the maximum hour of departure')
+            ->atPath('minHourDeparture')
+            ->addViolation();
+
+        if($minHourDepartureCorrect && $minHourNotificationCorrect && self::compareTimes($this->getMinHourDeparture(), $this->getMinHourNotification()) != 1)
+            $context->buildViolation('The minimum hour of notification should be before the minimum hour of departure')
+            ->atPath('minHourNotification')
+            ->addViolation();
+    }
+
+    /*
+     *    We check the hour is in the format HH:MM
+     */
+    public static function validateHour($time)
+    {
+        return preg_match('/^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/', $time);
+    }
+
+    /*
+     *    We compare two times
+     */
+    public static function compareTimes($time1, $time2)
+    {
+        list($hour1, $mins1) = explode(":", $time1);
+        list($hour2, $mins2) = explode(":", $time2);
+        if($hour1<$hour2)
+            return -1;
+        else if($hour1>$hour2)
+            return 1;
+        else
+        {
+            if($mins1<$mins2)
+                return -1;
+            else if($mins1>$mins2)
+                return 1;
+            else
+                return 0;
+        }
+    }
 
     /**
      * @ORM\ManyToOne(targetEntity="User", inversedBy="alerts")
-     * @ORM\JoinColumn(name="id", referencedColumnName="id", nullable=false)
+     * @Assert\NotNull(message="Alert should be associated with an user")
+     * @ORM\JoinColumns({
+     * })
+     * @Groups({"alertRead", "alertWrite"})
      */
-    public $users;
-       
+    public $user;
 
-    
+    /**
+     * @var \DateTime
+     * @ORM\Column(name="created_at", type="datetime")
+     * @Groups({"alertRead"})
+     */
+    private $createdAt;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTime();
+    }
+
     /**
      * Get id
      *
@@ -95,164 +235,187 @@ class Alert
         return $this->id;
     }
 
-   /**
-    * Get the value of from
-    *
-    * @return  string
-    */ 
-   public function getFrom()
-   {
-      return $this->from;
-   }
-
-   /**
-    * Set the value of from
-    *
-    * @param  string  $from
-    *
-    * @return  self
-    */ 
-   public function setFrom(string $from)
-   {
-      $this->from = $from;
-
-      return $this;
-   }
-
-   /**
-    * Get the value of to
-    *
-    * @return  string
-    */ 
-   public function getTo()
-   {
-      return $this->to;
-   }
-
-   /**
-    * Set the value of to
-    *
-    * @param  string  $to
-    *
-    * @return  self
-    */ 
-   public function setTo(string $to)
-   {
-      $this->to = $to;
-
-      return $this;
-   }
-
     /**
-     * Get the value of min_hour_departure
+     * Get the value of departure
      *
      * @return  string
-     */ 
-    public function getMin_hour_departure()
+     */
+    public function getDeparture()
     {
-        return $this->min_hour_departure;
+        return $this->departure;
     }
 
     /**
-     * Set the value of min_hour_departure
+     * Set the value of departure
      *
-     * @param  string  $min_hour_departure
+     * @param  string  $departure
      *
      * @return  self
-     */ 
-    public function setMin_hour_departure(string $min_hour_departure)
+     */
+    public function setDeparture(string $departure)
     {
-        $this->min_hour_departure = $min_hour_departure;
+        $this->departure = $departure;
 
         return $this;
     }
 
-     /**
-      * Get the value of max_hour_departure
-      *
-      * @return  string
-      */ 
-     public function getMax_hour_departure()
-     {
-          return $this->max_hour_departure;
-     }
-
-     /**
-      * Set the value of max_hour_departure
-      *
-      * @param  string  $max_hour_departure
-      *
-      * @return  self
-      */ 
-     public function setMax_hour_departure(string $max_hour_departure)
-     {
-          $this->max_hour_departure = $max_hour_departure;
-
-          return $this;
-     }
-
-      /**
-       * Get the value of min_hour_notification
-       *
-       * @return  string
-       */ 
-      public function getMin_hour_notification()
-      {
-            return $this->min_hour_notification;
-      }
-
-      /**
-       * Set the value of min_hour_notification
-       *
-       * @param  string  $min_hour_notification
-       *
-       * @return  self
-       */ 
-      public function setMin_hour_notification(string $min_hour_notification)
-      {
-            $this->min_hour_notification = $min_hour_notification;
-
-            return $this;
-      }
-
-       /**
-        * Get the value of days
-        */ 
-       public function getDays()
-       {
-              return $this->days;
-       }
-
-       /**
-        * Set the value of days
-        *
-        * @return  self
-        */ 
-       public function setDays($days)
-       {
-              $this->days = $days;
-
-              return $this;
-       }
-
     /**
-     * Get the value of users
-     */ 
-    public function getUsers()
+     * Get the value of arrival
+     *
+     * @return  string
+     */
+    public function getArrival()
     {
-        return $this->users;
+        return $this->arrival;
     }
 
     /**
-     * Set the value of users
+     * Set the value of arrival
+     *
+     * @param  string  $arrival
      *
      * @return  self
-     */ 
-    public function setUsers($users)
+     */
+    public function setArrival(string $arrival)
     {
-        $this->users = $users;
+        $this->arrival = $arrival;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of days
+     */
+    public function getDays()
+    {
+        return $this->days;
+    }
+
+    /**
+     * Set the value of days
+     *
+     * @return  self
+     */
+    public function setDays($days)
+    {
+        $this->days = $days;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of user
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * Set the value of user
+     *
+     * @return  self
+     */
+    public function setUser($user)
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of createdAt
+     *
+     * @return  \DateTime
+     */
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * Set the value of createdAt
+     *
+     * @param  \DateTime  $createdAt
+     *
+     * @return  self
+     */
+    public function setCreatedAt(\DateTime $createdAt)
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of minHourDeparture
+     *
+     * @return  string
+     */
+    public function getMinHourDeparture()
+    {
+        return $this->minHourDeparture;
+    }
+
+    /**
+     * Set the value of minHourDeparture
+     *
+     * @param  string  $minHourDeparture
+     *
+     * @return  self
+     */
+    public function setMinHourDeparture(string $minHourDeparture)
+    {
+        $this->minHourDeparture = $minHourDeparture;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of maxHourDeparture
+     *
+     * @return  string
+     */
+    public function getMaxHourDeparture()
+    {
+        return $this->maxHourDeparture;
+    }
+
+    /**
+     * Set the value of maxHourDeparture
+     *
+     * @param  string  $maxHourDeparture
+     *
+     * @return  self
+     */
+    public function setMaxHourDeparture(string $maxHourDeparture)
+    {
+        $this->maxHourDeparture = $maxHourDeparture;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of minHourNotification
+     *
+     * @return  string
+     */
+    public function getMinHourNotification()
+    {
+        return $this->minHourNotification;
+    }
+
+    /**
+     * Set the value of minHourNotification
+     *
+     * @param  string  $minHourNotification
+     *
+     * @return  self
+     */
+    public function setMinHourNotification(string $minHourNotification)
+    {
+        $this->minHourNotification = $minHourNotification;
 
         return $this;
     }
 }
-
