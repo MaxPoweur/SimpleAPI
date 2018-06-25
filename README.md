@@ -13,13 +13,13 @@ Purposes
 
 This project is meant to get started with a simple API implementing powerfull features :
 
-  - JWT Authentication
-  - Validators on objects fields supplied by users
-  - The use of an ORM (doctrine) to deal with the database in a sweet way
+  - **JWT Authentication**
+  - **Validators** on objects fields supplied by users
+  - The use of an **ORM (doctrine)** to deal with the database in a sweet way
   - Indicate some fields as Readable and/or Writable by users
-  - A simple but securized membersip management
+  - A simple but securized **membership management**
   
- The use of Symfony make this API maintainable, sustainable and easy to configure.
+ The use of **Symfony make** this API maintainable, sustainable and easy to configure.
   
 You said API Platform ?
 -------
@@ -77,7 +77,7 @@ Support available upon request.
 [27]: https://en.wikipedia.org/wiki/Linked_data
 [28]: https://developers.google.com/structured-data/
 [29]: http://searchengineland.com/tested-googlebot-crawls-javascript-heres-learned-220157
-[30]: https://www.the-webdev.com
+[30]: https://www.the-webdev.fr
 [31]: https://api-platform.com
 [32]: http://stateless.co/hal_specification.html
 [33]: http://yaml.org/
