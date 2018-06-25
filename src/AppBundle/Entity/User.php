@@ -6,6 +6,9 @@ use ApiPlatform\Core\Annotation\ApiResource;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use FOS\UserBundle\Model\User as BaseUser;
+use FOS\UserBundle\Model\UserInterface;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * User
@@ -20,17 +23,16 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @ORM\Table(name="users")
  * @ORM\Entity(repositoryClass="AppBundle\Repository\UsersRepository")
  */
-class User
+class User extends BaseUser
 {
     /**
      * @var int
-     *
-     * @ORM\Column(name="id", type="integer")
      * @ORM\Id
+     * @ORM\Column(name="id", type="integer")
      * @ORM\GeneratedValue(strategy="AUTO")
      * @Groups({"userRead", "alertRead"})
      */
-    private $id;
+    protected $id;
 
     /**
      * @var string
@@ -55,6 +57,7 @@ class User
      * @var string
      * @ORM\Column(name="lastname", type="string", length=255)
      * @Groups({"userRead", "userWrite", "alertRead"})
+     * @Assert\NotBlank()
      * @Assert\Length(
      *      min = 2,
      *      max = 10,
@@ -64,10 +67,51 @@ class User
      * @Assert\Regex(
      *      pattern="/[^a-zA-Z]/",
      *      match=false,
-     *      message="The last name must only contains letters"
+     *      message="The last name must only contain letters"
      * )
      */
     private $lastname;
+
+    /**
+     * @var string
+     * @Groups({"userWrite"})
+     * @Assert\NotBlank()
+     * @Assert\Length(
+     *      min = 5,
+     *      max = 12,
+     *      minMessage = "The password must be at least {{ limit }} characters long",
+     *      maxMessage = "The password cannot be longer than {{ limit }} characters"
+     * )
+     */
+     protected $plainPassword;
+
+     /**
+     * @Groups({"userRead", "userWrite"})
+     * @Assert\NotBlank()
+     * @Assert\Email(
+     *     message = "The email '{{ value }}' is not a valid email.",
+     *     checkMX = true
+     * )
+     */
+    protected $email;
+
+     /**
+     * @Groups({"userRead", "userWrite"})
+     * @Assert\NotBlank()
+     * @Assert\Length(
+     *      min = 5,
+     *      max = 12,
+     *      minMessage = "The username must be at least {{ limit }} characters long",
+     *      maxMessage = "The username cannot be longer than {{ limit }} characters"
+     * )
+     * @Assert\Regex(
+     *      pattern="/[^\w]/",
+     *      match=false,
+     *      message="The last name cannot contain special characters"
+     * )
+     */
+     protected $username;
+
 
     /**
      * @ORM\OneToMany(targetEntity="Alert", mappedBy="user")
@@ -84,8 +128,38 @@ class User
 
     public function __construct()
     {
+        parent::__construct();
         $this->createdAt = new \DateTime();
     }
+
+    /**
+     * @Assert\Callback
+     */
+     public function validatePassword(ExecutionContextInterface $context, $payload)
+     {
+        $uppercase = preg_match('@[A-Z]@', $this->plainPassword);
+        $lowercase = preg_match('@[a-z]@', $this->plainPassword);
+        $specialChar = preg_match('@[^\w]@', $this->plainPassword) || preg_match('@[\d]@', $this->plainPassword);
+        
+        if(!$uppercase)
+        {
+            $context->buildViolation('The password should contain at least one uppercase letter')
+                ->atPath('plainPassword')
+                ->addViolation();
+        }
+        if(!$lowercase)
+        {
+            $context->buildViolation('The password should contain at least one lowercase letter')
+                ->atPath('plainPassword')
+                ->addViolation();
+        }
+        if(!$specialChar)
+        {
+            $context->buildViolation('The password should contain at least one special character/number')
+                ->atPath('plainPassword')
+                ->addViolation();
+        }
+     }
 
     /**
      * Get id
@@ -174,5 +248,10 @@ class User
     public function getAlerts()
     {
         return $this->alerts;
+    }
+
+    public function isUser(UserInterface $user = null): bool
+    {
+        return $user instanceof self && $user->id === $this->id;
     }
 }

@@ -43,6 +43,7 @@ class Alert
      *
      * @ORM\Column(name="departure", type="string", length=10)
      * @Groups({"alertRead", "alertWrite", "putAlert"})
+     * @Assert\NotBlank()
      * @Assert\Length(
      *      min = 2,
      *      max = 10,
@@ -62,6 +63,7 @@ class Alert
      *
      * @ORM\Column(name="arrival", type="string", length=10)
      * @Groups({"alertRead", "alertWrite", "putAlert"})
+     * @Assert\NotBlank()
      * @Assert\Length(
      *      min = 2,
      *      max = 10,
@@ -71,7 +73,7 @@ class Alert
      * @Assert\Regex(
      *      pattern="/[^a-zA-Z]/",
      *      match=false,
-     *      message="The arrival must only contains letters"
+     *      message="The arrival must only contain letters"
      * )
      */
     private $arrival;
@@ -81,6 +83,7 @@ class Alert
      *
      * @ORM\Column(name="minHourDeparture", type="string", length=5)
      * @Groups({"alertRead", "alertWrite", "putAlert"})
+     * @Assert\NotBlank()
      * @Assert\Length(
      *      min = 5,
      *      max = 5,
@@ -95,6 +98,7 @@ class Alert
      *
      * @ORM\Column(name="maxHourDeparture", type="string", length=5)
      * @Groups({"alertRead", "alertWrite", "putAlert"})
+     * @Assert\NotBlank()
      */
     private $maxHourDeparture;
 
@@ -103,6 +107,7 @@ class Alert
      *
      * @ORM\Column(name="minHourNotification", type="string", length=5)
      * @Groups({"alertRead", "alertWrite", "putAlert"})
+     * @Assert\NotBlank()
      */
     private $minHourNotification;
 
@@ -116,6 +121,7 @@ class Alert
      *      minMessage = "You must specify at least one day",
      *      maxMessage = "You cannot specify more than {{ limit }} emails"
      * )
+     * @Assert\NotBlank()
      */
     private $days;
 
@@ -124,7 +130,6 @@ class Alert
      */
     public function validateDays(ExecutionContextInterface $context, $payload)
     {
-        // somehow you have an array of "fake names"
         $days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
         foreach ($this->getDays() as $day) {

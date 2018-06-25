@@ -44,3 +44,5 @@ Toutes les contraintes :
 
 validators (types, cb ...)
 grps de (de)serialization
+
+D:\wamp64\bin\php\php7.2.7\php.exe C:\ProgramData\ComposerSetup\bin\composer.phar
