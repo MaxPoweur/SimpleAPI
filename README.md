@@ -21,6 +21,26 @@ This project is meant to get started with a simple API implementing powerfull fe
   
  The use of **Symfony make** this API maintainable, sustainable and easy to configure.
   
+Demonstration
+-------
+
+You can find the documentation **[there][37]**.
+
+To get started, you first need to get authenticated.
+
+
+Here is a demonstration account :
+
+ *  **_username**: demoUsername
+  
+ *  **_password**: @demoPass
+  
+  
+To authenticate yourself, send [_username, _password] as a POST request to this login page : 
+http://82.165.202.90/login_check
+
+You will receive a **token** used to access the api resources ( /users, /pages ... ).
+  
 You said API Platform ?
 -------
 
@@ -84,3 +104,4 @@ Support available upon request.
 [34]: https://www.w3.org/XML/
 [35]: https://www.ietf.org/rfc/rfc4180.txt
 [36]: https://github.com/dunglas/DunglasActionBundle
+[37]: http://82.165.202.90/api/doc
