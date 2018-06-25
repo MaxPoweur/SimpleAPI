@@ -66,6 +66,7 @@ flexibility:
 -------
 
 Created by [Adam Rotard][23]. Owner of [TheWebdev][30]
+
 Support available upon request.
 
 [1]:  http://json-ld.org
